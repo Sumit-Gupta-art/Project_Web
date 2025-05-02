@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BuildMart - All Products</title>
+    <link rel="stylesheet" href="Style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <h1>BuildMart</h1>
+            </div>
+            <button class="menu-toggle" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="all%20product.html" class="active">All Products</a></li>
+                    <li><a href="index.html#categories">Categories</a></li>
+                    <li><a href="index.html#contact">Contact</a></li>
+                    <li class="admin-link" style="display: none;">
+                        <a href="admin/admin.html">Admin Panel</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Products Section -->
+    <section id="all-products" class="products-page">
+        <div class="products-container">
+            <div class="filters-section">
+                <h2>Filters</h2>
+                <div class="search-box">
+                    <input type="text" id="searchProducts" placeholder="Search products...">
+                </div>
+                <div class="filter-group">
+                    <h3>Categories</h3>
+                    <div id="categoryFilters">
+                        <!-- Categories will be dynamically added here -->
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <h3>Price Range</h3>
+                    <div class="price-range">
+                        <input type="number" id="minPrice" placeholder="Min">
+                        <input type="number" id="maxPrice" placeholder="Max">
+                        <button id="applyPrice">Apply</button>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <h3>Sort By</h3>
+                    <select id="sortProducts">
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                        <option value="price-asc">Price (Low to High)</option>
+                        <option value="price-desc">Price (High to Low)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="products-grid">
+                <!-- Products will be dynamically loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Product Details Modal -->
+    <div id="productModal" class="product-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="product-details">
+                <!-- Product details will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h3>About BuildMart</h3>
+                    <p>Your trusted partner in construction materials since 1998.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="index.html#about">About Us</a></li>
+                        <li><a href="index.html#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Contact Info</h3>
+                    <ul class="contact-info">
+                        <li><i class="fas fa-map-marker-alt"></i> 123 Construction Avenue</li>
+                        <li><i class="fas fa-phone"></i> +91 123-456-7890</li>
+                        <li><i class="fas fa-envelope"></i> info@buildmart.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 BuildMart. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Product page specific functionality
+        document.addEventListener('DOMContentLoaded', async () => {
+            let products = [];
+            let filteredProducts = [];
+            const productsGrid = document.querySelector('.products-grid');
+            const searchInput = document.getElementById('searchProducts');
+            const sortSelect = document.getElementById('sortProducts');
+            const categoryFilters = document.getElementById('categoryFilters');
+            const minPriceInput = document.getElementById('minPrice');
+            const maxPriceInput = document.getElementById('maxPrice');
+            const applyPriceBtn = document.getElementById('applyPrice');
+
+            // Updated fetchProducts function
+            async function fetchProducts() {
+                try {
+                    const response = await fetch('http://localhost:3000/api/products');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    products = await response.json();
+                    filteredProducts = [...products];
+                    updateProductDisplay();
+                    setupCategories();
+                } catch (error) {
+                    console.error('Error fetching products:', error);
+                    productsGrid.innerHTML = `
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <p>Failed to load products. Please try again later.</p>
+                            <button class="btn btn-primary mt-3" onclick="fetchProducts()">
+                                <i class="fas fa-sync-alt"></i> Retry
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+
+            // Display products
+            function updateProductDisplay() {
+                const productHTML = filteredProducts.map(product => `
+                    <div class="product-card" data-id="${product._id}">
+                        <div class="product-image">
+                            <img src="${product.imageUrl}" alt="${product.name}" 
+                                 onerror="this.src='https://via.placeholder.com/300x200?text=Product+Image'">
+                        </div>
+                        <div class="product-info">
+                            <h3>${product.name}</h3>
+                            <p class="product-category">${product.category}</p>
+                            <p class="product-price">₹${product.price.toLocaleString('en-IN')}</p>
+                            <p class="stock-status ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}">
+                                ${product.stock > 0 ? `In Stock (${product.stock})` : 'Out of Stock'}
+                            </p>
+                            <button class="view-details-btn" onclick="showProductDetails('${product._id}')">
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                productsGrid.innerHTML = productHTML;
+            }
+
+            // Setup category filters
+            function setupCategories() {
+                const categories = [...new Set(products.map(p => p.category))];
+                categoryFilters.innerHTML = categories.map(category => `
+                    <label class="category-checkbox">
+                        <input type="checkbox" value="${category}"> ${category}
+                    </label>
+                `).join('');
+
+                // Add event listeners to category checkboxes
+                document.querySelectorAll('.category-checkbox input').forEach(checkbox => {
+                    checkbox.addEventListener('change', applyFilters);
+                });
+            }
+
+            // Filter and sort products
+            function applyFilters() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox input:checked'))
+                    .map(checkbox => checkbox.value);
+                const minPrice = parseFloat(minPriceInput.value) || 0;
+                const maxPrice = parseFloat(maxPriceInput.value) || Infinity;
+
+                filteredProducts = products.filter(product => {
+                    const matchesSearch = product.name.toLowerCase().includes(searchTerm) ||
+                                        product.description.toLowerCase().includes(searchTerm);
+                    const matchesCategory = selectedCategories.length === 0 || 
+                                         selectedCategories.includes(product.category);
+                    const matchesPrice = product.price >= minPrice && 
+                                       product.price <= maxPrice;
+
+                    return matchesSearch && matchesCategory && matchesPrice;
+                });
+
+                // Apply sorting
+                const [sortBy, sortOrder] = sortSelect.value.split('-');
+                filteredProducts.sort((a, b) => {
+                    const aValue = a[sortBy];
+                    const bValue = b[sortBy];
+                    
+                    if (sortOrder === 'asc') {
+                        return aValue > bValue ? 1 : -1;
+                    } else {
+                        return aValue < bValue ? 1 : -1;
+                    }
+                });
+
+                updateProductDisplay();
+            }
+
+            // Show product details
+            window.showProductDetails = function(productId) {
+                const product = products.find(p => p._id === productId);
+                const modal = document.getElementById('productModal');
+                const details = modal.querySelector('.product-details');
+                
+                details.innerHTML = `
+                    <div class="modal-product-image">
+                        <img src="${product.imageUrl}" alt="${product.name}">
+                    </div>
+                    <div class="modal-product-info">
+                        <h2>${product.name}</h2>
+                        <p class="modal-category">${product.category}</p>
+                        <p class="modal-price">₹${product.price.toLocaleString('en-IN')}</p>
+                        <p class="modal-description">${product.description}</p>
+                        <p class="modal-stock ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}">
+                            ${product.stock > 0 ? `In Stock (${product.stock} units)` : 'Out of Stock'}
+                        </p>
+                        <button class="inquiry-btn" onclick="window.location.href='index.html#contact'">
+                            <i class="fas fa-envelope"></i> Inquire Now
+                        </button>
+                    </div>
+                `;
+                
+                modal.style.display = 'block';
+            };
+
+            // Event listeners
+            searchInput.addEventListener('input', applyFilters);
+            sortSelect.addEventListener('change', applyFilters);
+            applyPriceBtn.addEventListener('click', applyFilters);
+
+            // Close modal
+            document.querySelector('.close-modal').addEventListener('click', () => {
+                document.getElementById('productModal').style.display = 'none';
+            });
+
+            // Close modal on outside click
+            window.addEventListener('click', (e) => {
+                const modal = document.getElementById('productModal');
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+
+            // Initial load
+            await fetchProducts();
+        });
+
+        // Mobile menu toggle
+        const menuToggle = document.querySelector('.menu-toggle');
+        const nav = document.querySelector('nav');
+
+        menuToggle.addEventListener('click', () => {
+            document.body.classList.toggle('menu-open');
+            nav.classList.toggle('active');
+            
+            const overlay = document.querySelector('.nav-overlay');
+            if (!overlay) {
+                const div = document.createElement('div');
+                div.className = 'nav-overlay';
+                document.body.appendChild(div);
+                div.classList.add('active');
+                
+                div.addEventListener('click', () => {
+                    document.body.classList.remove('menu-open');
+                    nav.classList.remove('active');
+                    div.remove();
+                });
+            } else {
+                overlay.remove();
+            }
+        });
+
+        // Check if user is admin and show admin link
+        function checkAdminStatus() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const adminLinks = document.querySelectorAll('.admin-link');
+            adminLinks.forEach(link => {
+                link.style.display = user.role === 'admin' ? 'block' : 'none';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', checkAdminStatus);
+    </script>
+</body>
+</html>
